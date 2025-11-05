@@ -1,0 +1,107 @@
+---
+title: "cs10: Satellite Remote Sensing"
+format: html
+editor: visual
+---
+
+# **Overview**
+
+## **1. Introduction**
+
+In this case study, you’ll explore how satellite remote sensing can reveal spatial and temporal patterns in **Land Surface Temperature (LST)** and **Land Cover (LULC)** using MODIS data products.
+
+By the end of this lab, you will: - Read and interpret data stored in **NetCDF** format\
+- Extract and analyze time series from satellite data\
+- Calculate **monthly climatologies**\
+- Compare **LST across land cover types**
+
+You’ll work primarily with two MODIS datasets: - **MOD11A2**: Land Surface Temperature (1 km, 8-day composite) - **MCD12Q1**: Land Cover Type (annual classification)
+
+# **Setup and Data Download**
+
+You’ll need both `MOD11A2` (LST) and `MCD12Q1` (Land Cover) NetCDF files.
+
+### **💡 Hints:**
+
+-   Load key packages: `terra`, `tidyverse`, `sf`, and `ncdf4`
+
+-   Create a `data` folder for downloads using `dir.create("data", showWarnings = FALSE)`
+
+-   Download the `.nc` files from the provided GitHub URLs
+
+-   Store them in a `data/` folder and, if you are keeping your code in a git repository, add `*data*` to your `.gitignore` file so git doesn’t track them.
+
+```{r}
+#install.packages("rasterVis")
+#install.packages("ncdf4")
+library(terra)
+library(tidyverse)
+library(sf)
+library(knitr)
+library(kableExtra)
+library(rasterVis)
+library(ncdf4)
+
+dir.create("data", showWarnings = FALSE)
+
+lulc_url <- "https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MCD12Q1.051_aid0001.nc?raw=true"
+lst_url <- "https://github.com/adammwilson/DataScienceData/blob/master/inst/extdata/appeears/MOD11A2.006_aid0001.nc?raw=true"
+
+download.file(lulc_url, destfile = "data/MCD12Q1.051_aid0001.nc", mode = "wb")
+download.file(lst_url, destfile = "data/MOD11A2.006_aid0001.nc", mode = "wb")
+```
+Load and Explore the Data
+💡 Hints:
+
+Use nc_open() to print the file metadata and learn the names of the subdataset
+Use rast() to read the NetCDF file and specify which subdatasets. (sbds) you want to select.
+Check layer names with names().
+Use plot() or gplot() to visualize the rasters.
+
+```{r}
+MCD12Q1 <- nc_open("data/MCD12Q1.051_aid0001.nc")
+MOD11A2 <- nc_open("data/MOD11A2.006_aid0001.nc")
+
+lulc <- rast("data/MCD12Q1.051_aid0001.nc", subds = "Land_Cover_Type_1")
+
+names(lulc)
+
+plot(lulc$Land_Cover_Type_1_13)
+
+lst <- rast("data/MOD11A2.006_aid0001.nc", subds ="LST_Day_1km")
+
+names(lst)
+
+plot(lst)
+```
+# **Convert and Label Land Cover**
+
+```{r}
+
+Land_Cover_Type_1 <- c(
+  "Water" = 0, "Evergreen Needleleaf forest" = 1, "Evergreen Broadleaf forest" = 2,
+  "Deciduous Needleleaf forest" = 3, "Deciduous Broadleaf forest" = 4, "Mixed forest" = 5,
+  "Closed shrublands" = 6, "Open shrublands" = 7, "Woody savannas" = 8, "Savannas" = 9,
+  "Grasslands" = 10, "Permanent wetlands" = 11, "Croplands" = 12, "Urban & built-up" = 13,
+  "Cropland/Natural vegetation mosaic" = 14, "Snow & ice" = 15, "Barren/Sparsely vegetated" = 16
+)
+
+lcd <- data.frame(
+  ID = Land_Cover_Type_1,
+  landcover = names(Land_Cover_Type_1),
+  stringsAsFactors = FALSE
+)
+
+lulc <- as.factor(lulc)
+
+scoff(lst) = cbind(0.02, -273.15)
+
+plot(lst)
+
+```
+
+
+
+
+
+
