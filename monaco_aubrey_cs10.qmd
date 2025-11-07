@@ -34,6 +34,7 @@ You’ll need both `MOD11A2` (LST) and `MCD12Q1` (Land Cover) NetCDF files.
 ```{r}
 #install.packages("rasterVis")
 #install.packages("ncdf4")
+install.packages("tidyterra")
 library(terra)
 library(tidyverse)
 library(sf)
@@ -41,6 +42,8 @@ library(knitr)
 library(kableExtra)
 library(rasterVis)
 library(ncdf4)
+library(lubridate)
+library(tidyterra)
 
 dir.create("data", showWarnings = FALSE)
 
@@ -72,6 +75,8 @@ lst <- rast("data/MOD11A2.006_aid0001.nc", subds ="LST_Day_1km")
 
 names(lst)
 
+names(lst)
+
 plot(lst)
 ```
 # **Convert and Label Land Cover**
@@ -99,9 +104,98 @@ scoff(lst) = cbind(0.02, -273.15)
 plot(lst)
 
 ```
+Part 1: Extract Time Series for a Point
+Hint
+Use extract() to get the average LST for a location in Buffalo, NY.
+
+💡 Hints:
+
+Create a point with st_as_sf() to create a point at lon = -78.79, lat = 43.00 in wgs84 (geographic) coordinates (crs = 4326)
+Transform to the raster’s CRS with st_transform().
+Use terra::extract() to extract LST values within a 1 km buffer.
+Combine with the corresponding time(lst) values into a tidy data frame.
+Plot the result with ggplot().
+`geom_smooth()` using method = 'loess' and formula = 'y ~ x'
+
+```{r}
+
+buff_point <- data.frame(lon = -78.79, lat = 43.00)
+
+buff_point_sf <- st_as_sf(buff_point, coords = c("lon", "lat"), crs = 4326)
+
+buff_point_sf <- st_transform(buff_point_sf, st_crs(lst))
+
+extracted_lst <- terra::extract(lst, buff_point_sf)
+
+time_lst <- time(lst)
+
+combined_lst <- extracted_lst %>% 
+  rbind(time_lst)
+
+fixed_combined <- t(combined_lst)
+
+fixed_combined <- as.data.frame(fixed_combined)
+
+fixed_combined <- fixed_combined %>%
+  rename(year = V2) %>%
+  rename(temp = V1)
+
+fixed_combined <- fixed_combined %>%
+  mutate(year = as.Date(year))
+
+ggplot(fixed_combined, aes(x = year, y = temp)) + geom_point() + geom_smooth(method = "loess", formula = "y ~ x", span = 0.01)
+
+```
+Part 2: Monthly Climatology
+Hint
+Summarize the weekly data into monthly means using tapp().
+
+💡 Hints:
+
+Use index = "months" and fun = mean in tapp().
+Rename layers to month names. You could use month.name[...] or find another way to do it.
+Visualize with a ggplot using tidyterra::geom_spatraster and facet_wrap(~lyr) to compare months.
+```{r}
+
+monthly_lst <- tapp(lst, fun=mean, index="months", na.rm=TRUE)
+
+names(monthly_lst)
+
+names(monthly_lst) <- c(month.name)
+
+summary(monthly_lst)
+
+terra::values(monthly_lst)
+
+ggplot(monthly_lst) + geom_spatraster(data = monthly_lst) + stat_spatraster(data = monthly_lst) + facet_wrap(~lyr) + scale_fill_gradientn(colors = c("blue", "gray", "red"))
+
+```
 
 
+Part 3: Compare LST by Land Cover Type
 
+Challenge
+Explore how LST differs between Urban & built-up and Deciduous Broadleaf Forest areas.
 
+💡 Hints:
+
+Resample the land cover raster to match LST resolution with resample(method = "near").
+Extract values from both rasters into a combined data frame. You could use bind_cols() or other methods.
+Join land cover names from the MODIS legend table.
+Filter to the two land cover types of interest (c("Urban & built-up", "Deciduous Broadleaf forest")) and plot monthly distributions.
+
+```{r}
+lulc <- resample(lulc, lst, method = "near")
+
+lulc_lst_all <- c(lst, lulc_data)
+
+lulc_lst_all <- as.data.frame(lulc_lst_all)
+  
+lulc_lst_filtered <- lulc_lst_all %>% 
+  pivot_longer(cols=c("January":"December"), values_to = "temperature", names_to = "month") %>%
+  group_by(month)
+
+ggplot(data = monthly_lst_filtered, aes(x = month, y = temperature)) + geom_violin()
+```
 
 
