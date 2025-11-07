@@ -69,7 +69,7 @@ lulc <- rast("data/MCD12Q1.051_aid0001.nc", subds = "Land_Cover_Type_1")
 
 names(lulc)
 
-plot(lulc$Land_Cover_Type_1_13)
+plot(lulc$Land_Cover_Type_1_13, main = "MODIS Land Cover (Year 13)")
 
 lst <- rast("data/MOD11A2.006_aid0001.nc", subds ="LST_Day_1km")
 
@@ -101,7 +101,7 @@ lulc <- as.factor(lulc)
 
 scoff(lst) = cbind(0.02, -273.15)
 
-plot(lst)
+plot(lst, main = "Surface Temperature (C)")
 
 ```
 Part 1: Extract Time Series for a Point
@@ -143,7 +143,7 @@ fixed_combined <- fixed_combined %>%
 fixed_combined <- fixed_combined %>%
   mutate(year = as.Date(year))
 
-ggplot(fixed_combined, aes(x = year, y = temp)) + geom_point() + geom_smooth(method = "loess", formula = "y ~ x", span = 0.01)
+ggplot(fixed_combined, aes(x = year, y = temp)) + geom_point() + geom_smooth(method = "loess", formula = "y ~ x", span = 0.01) + labs(title = "Time Series of LST Near Buffalo. NY", x = "Date", y = "Land Surface Temperature (Degrees C)")
 
 ```
 Part 2: Monthly Climatology
@@ -191,9 +191,9 @@ lulc_lst_all <- c(lst, lulc_data)
 
 lulc_lst_all <- as.data.frame(lulc_lst_all)
   
-lulc_lst_filtered <- lulc_lst_all %>% 
-  pivot_longer(cols=c("January":"December"), values_to = "temperature", names_to = "month") %>%
-  group_by(month)
+#lulc_lst_filtered <- lulc_lst_all %>% 
+ # pivot_longer(cols=c("January":"December"), values_to = "temperature", names_to = "month") %>%
+  # group_by(month)
 
 ggplot(data = monthly_lst_filtered, aes(x = month, y = temperature)) + geom_violin()
 ```
