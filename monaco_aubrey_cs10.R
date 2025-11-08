@@ -1,37 +1,8 @@
----
-title: "cs10: Satellite Remote Sensing"
-format: html
-editor: visual
----
+#Load key packages: `terra`, `tidyverse`, `sf`, and `ncdf4`
+#Create a `data` folder for downloads using `dir.create("data", showWarnings = FALSE)`
+#Download the `.nc` files from the provided GitHub URLs
+#Store them in a `data/` folder and, if you are keeping your code in a git repository, add `*data*` to your `.gitignore` file so git doesn’t track them.
 
-# **Overview**
-
-## **1. Introduction**
-
-In this case study, you’ll explore how satellite remote sensing can reveal spatial and temporal patterns in **Land Surface Temperature (LST)** and **Land Cover (LULC)** using MODIS data products.
-
-By the end of this lab, you will: - Read and interpret data stored in **NetCDF** format\
-- Extract and analyze time series from satellite data\
-- Calculate **monthly climatologies**\
-- Compare **LST across land cover types**
-
-You’ll work primarily with two MODIS datasets: - **MOD11A2**: Land Surface Temperature (1 km, 8-day composite) - **MCD12Q1**: Land Cover Type (annual classification)
-
-# **Setup and Data Download**
-
-You’ll need both `MOD11A2` (LST) and `MCD12Q1` (Land Cover) NetCDF files.
-
-### **💡 Hints:**
-
--   Load key packages: `terra`, `tidyverse`, `sf`, and `ncdf4`
-
--   Create a `data` folder for downloads using `dir.create("data", showWarnings = FALSE)`
-
--   Download the `.nc` files from the provided GitHub URLs
-
--   Store them in a `data/` folder and, if you are keeping your code in a git repository, add `*data*` to your `.gitignore` file so git doesn’t track them.
-
-```{r}
 #install.packages("rasterVis")
 #install.packages("ncdf4")
 #install.packages("tidyterra")
@@ -52,16 +23,16 @@ lst_url <- "https://github.com/adammwilson/DataScienceData/blob/master/inst/extd
 
 download.file(lulc_url, destfile = "data/MCD12Q1.051_aid0001.nc", mode = "wb")
 download.file(lst_url, destfile = "data/MOD11A2.006_aid0001.nc", mode = "wb")
-```
-Load and Explore the Data
-💡 Hints:
 
-Use nc_open() to print the file metadata and learn the names of the subdataset
-Use rast() to read the NetCDF file and specify which subdatasets. (sbds) you want to select.
-Check layer names with names().
-Use plot() or gplot() to visualize the rasters.
+#Load and Explore the Data
+#Hints:
+  
+#Use nc_open() to print the file metadata and learn the names of the subdataset
+#Use rast() to read the NetCDF file and specify which subdatasets. (sbds) you want to select.
+#Check layer names with names().
+#Use plot() or gplot() to visualize the rasters.
 
-```{r}
+#Given in starter scripts
 MCD12Q1 <- nc_open("data/MCD12Q1.051_aid0001.nc")
 MOD11A2 <- nc_open("data/MOD11A2.006_aid0001.nc")
 
@@ -74,11 +45,10 @@ plot(lulc$Land_Cover_Type_1_13, main = "MODIS Land Cover (Year 13)")
 lst <- rast("data/MOD11A2.006_aid0001.nc", subds ="LST_Day_1km")
 
 names(lst)
-```
-# **Convert and Label Land Cover**
 
-```{r}
+#Convert and Label Land Cover
 
+#Given in starter script
 Land_Cover_Type_1 <- c(
   "Water" = 0, "Evergreen Needleleaf forest" = 1, "Evergreen Broadleaf forest" = 2,
   "Deciduous Needleleaf forest" = 3, "Deciduous Broadleaf forest" = 4, "Mixed forest" = 5,
@@ -99,21 +69,18 @@ scoff(lst) = cbind(0.02, -273.15)
 
 plot(lst, main = "Surface Temperature (C)")
 
-```
-Part 1: Extract Time Series for a Point
-Hint
-Use extract() to get the average LST for a location in Buffalo, NY.
+#Part 1: Extract Time Series for a Point
+#Hint
+#Use extract() to get the average LST for a location in Buffalo, NY.
 
-💡 Hints:
-
-Create a point with st_as_sf() to create a point at lon = -78.79, lat = 43.00 in wgs84 (geographic) coordinates (crs = 4326)
-Transform to the raster’s CRS with st_transform().
-Use terra::extract() to extract LST values within a 1 km buffer.
-Combine with the corresponding time(lst) values into a tidy data frame.
-Plot the result with ggplot().
-`geom_smooth()` using method = 'loess' and formula = 'y ~ x'
-
-```{r}
+# Hints:
+  
+#Create a point with st_as_sf() to create a point at lon = -78.79, lat = 43.00 in wgs84 (geographic) coordinates (crs = 4326)
+#Transform to the raster’s CRS with st_transform().
+#Use terra::extract() to extract LST values within a 1 km buffer.
+#Combine with the corresponding time(lst) values into a tidy data frame.
+#Plot the result with ggplot().
+#`geom_smooth()` using method = 'loess' and formula = 'y ~ x'
 
 #Created point to find data around
 buff_point <- data.frame(lon = -78.79, lat = 43.00)
@@ -152,17 +119,15 @@ fixed_combined <- fixed_combined %>%
 #Used "span" to fit the trend better with loess method
 ggplot(fixed_combined, aes(x = year, y = temp)) + geom_point() + geom_smooth(method = "loess", formula = "y ~ x", span = 0.01) + labs(title = "Time Series of LST Near Buffalo. NY", x = "Date", y = "Land Surface Temperature (Degrees C)")
 
-```
-Part 2: Monthly Climatology
-Hint
-Summarize the weekly data into monthly means using tapp().
+#Part 2: Monthly Climatology
+#Hint
+#Summarize the weekly data into monthly means using tapp().
 
-💡 Hints:
-
-Use index = "months" and fun = mean in tapp().
-Rename layers to month names. You could use month.name[...] or find another way to do it.
-Visualize with a ggplot using tidyterra::geom_spatraster and facet_wrap(~lyr) to compare months.
-```{r}
+# Hints:
+  
+#Use index = "months" and fun = mean in tapp().
+#Rename layers to month names. You could use month.name[...] or find another way to do it.
+#Visualize with a ggplot using tidyterra::geom_spatraster and facet_wrap(~lyr) to compare months.
 #Used tapp to sort lst by month, had to include na.rm =TRUE to include all data
 monthly_lst <- tapp(lst, fun=mean, index="months", na.rm=TRUE)
 
@@ -178,22 +143,17 @@ terra::values(monthly_lst)
 
 ggplot(monthly_lst) + geom_spatraster(data = monthly_lst) + stat_spatraster(data = monthly_lst) + facet_wrap(~lyr) + scale_fill_gradientn(colors = c("blue", "gray", "red"))
 
-```
+#Part 3: Compare LST by Land Cover Type
 
+#Explore how LST differs between Urban & built-up and Deciduous Broadleaf Forest areas.
 
-Part 3: Compare LST by Land Cover Type
+#Hints:
+  
+#Resample the land cover raster to match LST resolution with resample(method = "near").
+#Extract values from both rasters into a combined data frame. You could use bind_cols() or other methods.
+#Join land cover names from the MODIS legend table.
+#Filter to the two land cover types of interest (c("Urban & built-up", "Deciduous Broadleaf forest")) and plot monthly distributions.
 
-Explore how LST differs between Urban & built-up and Deciduous Broadleaf Forest areas.
-
-💡 Hints:
-
-Resample the land cover raster to match LST resolution with resample(method = "near").
-Extract values from both rasters into a combined data frame. You could use bind_cols() or other methods.
-Join land cover names from the MODIS legend table.
-Filter to the two land cover types of interest (c("Urban & built-up", "Deciduous Broadleaf forest")) and plot monthly distributions.
-
-
-```{r}
 
 #I only chose data for one year as I was having trouble doing this for all year and monthly averages; I also used the monthly_lst rather than the general lst
 
@@ -228,8 +188,8 @@ lulc_lst_filtered <- lulc_lst_filtered %>%
 
 #Formatted month column so it would go in month order on graph
 lulc_lst_filtered$month <- factor(lulc_lst_filtered$month, levels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
-  
+
 ggplot(data = lulc_lst_filtered, aes(x = month, y = temperature, fill = landcover)) + geom_violin() + labs(title = "Monthly LST For Landcover Type", x = "Month", y = "LST (Degrees C)", fill = "Landcover")
-```
+
 
 
