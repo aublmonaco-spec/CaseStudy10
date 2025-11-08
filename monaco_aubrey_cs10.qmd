@@ -229,7 +229,11 @@ lulc_lst_filtered <- lulc_lst_filtered %>%
 #Formatted month column so it would go in month order on graph
 lulc_lst_filtered$month <- factor(lulc_lst_filtered$month, levels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
   
-ggplot(data = lulc_lst_filtered, aes(x = month, y = temperature, fill = landcover)) + geom_violin() + labs(title = "Monthly LST For Landcover Type", x = "Month", y = "LST (Degrees C)", fill = "Landcover")
+ggplot(data = lulc_lst_filtered, aes(x = month, y = temperature, fill = landcover)) + geom_violin() + labs(title = "Monthly LST For Landcover Type", x = "Month", y = "LST (Degrees C)", fill = "Landcover Type")
 ```
 
+#Reflection
+1. In summer, LST reaches its peak, and it takes a bit to decline going into colder months. But, LST rises more quickly going into summer months. There is also more temperature variation on average in the summer.
+2. Forested areas stay cooler compared to urban areas, and there is less variation in temperature, especially in summer months.
+3. I think MODIS is useful, but I found combining and separating LST for each month at different scales to be difficult and not very straightforward.
 
